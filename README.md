@@ -12,7 +12,7 @@ APP para envío masivo de tickets mediante conexión a la API de Zendesk.
 
 ## 2 - Copiar y pegar ID's
 
-Se deben copiar y pegar todos los ID's separados por una coma (,). Notar que el último registro no debe tener una coma, pues la aplicación no permitirá realizar la carga si no es este el caso. 
+Se deben copiar (ctl + c) y pegar (ctl + v) todos los ID's separados por una coma (,). Notar que el último registro no debe tener una coma, pues la aplicación no permitirá realizar la carga si no es este el caso. 
 <div align="center">
     <img src="imagenes/dos.png" alt="Texto alternativo de la imagen">
 </div>

@@ -29,7 +29,7 @@ Luego de cumplir el paso anterior, es necesario presionar el botón para cargar 
 
 
 
-## 4 - Seleccionar Agente que Notificará
+## 4 - Seleccionar agente que notificará
 
 
 Mediante la primera caja superior del costado derecho, es posible hacer dobleclick y desplazarse por la lista para seleccionar al Agente que emitirá la comunicación.
@@ -38,7 +38,7 @@ Mediante la primera caja superior del costado derecho, es posible hacer doblecli
     <img src="imagenes/cuatro.png" alt="Texto alternativo de la imagen">
 </div>
 
-## 5 - Seleccionar Producto
+## 5 - Seleccionar producto
 
 
 Mediante la selección del producto se podrá activar el formulario que clasifica el tipo de comunicación dentro de la plataforma Zendesk.

@@ -12,7 +12,7 @@ APP para envío masivo de tickets mediante conexión a la API de Zendesk.
 
 ## 2 - Copiar y pegar ID's
 
-Se deben copiar y pegar todos los ID's separados por una coma (,). Notar que el último registro no debe tener una coma, pues la aplicación no permitirá realizar la carga si no es este el caso. 
+Se deben copiar (ctl + c) y pegar (ctl + v) todos los ID's separados por una coma (,). Notar que el último registro no debe tener una coma, pues la aplicación no permitirá realizar la carga si no se elimina. 
 <div align="center">
     <img src="imagenes/dos.png" alt="Texto alternativo de la imagen">
 </div>
@@ -65,3 +65,46 @@ Comenzará el proceso de notificación, para luego dejar en la carpeta un excel 
 <div align="center">
     <img src="imagenes/seis.png" alt="Texto alternativo de la imagen">
 </div>
+
+
+## Anexo
+
+La app debe tener en la misma carpeta los archivos "agentes.json" y "usuarios_zendesk.json". Estos archivos deben generarse de la siguiente forma, considerando como insumo el archvo "json_usuarios.json" descargado de la API:
+
+```
+from tqdm import tqdm
+import pandas as pd
+
+# Obtener la lista de usuarios
+users = zenpy_client.users()
+
+data = []
+# Recorrer todos los usuarios con barra de progreso
+with tqdm(total=len(users), desc="Procesando usuarios") as pbar:
+    # Recorrer cada usuario
+    for user in users:
+        data.append(user.to_dict())  # Convertir el usuario a un diccionario y agregarlo a la lista
+
+        # Actualizar la barra de progreso
+        pbar.update(1)
+
+# Guardar la lista de usuarios en el archivo JSON
+with open("json_usuarios.json", "w") as file:
+    json.dump(data, file, indent=2)
+
+# Leer el archivo JSON como un DataFrame
+df_users = pd.read_json("json_usuarios.json")
+
+# Imprimir el DataFrame
+print(df_users)
+
+```
+
+Luego leer el archivo mediante las siguientes lineas:
+
+```
+df_users = pd.read_json("json_usuarios.json")
+
+df_users[["id","name","email"]].to_json("usuarios_zendesk.json")
+df_users[df_users['role'] == 'agent'][["id", "name", "email"]].to_json("agentes.json", orient='records')
+```

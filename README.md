@@ -12,7 +12,7 @@ Luego de clonar el repo, instalar las librerias del proyecto ejecutando en la co
 pip install -r requirements.txt
 ```
 
-mediante pyinstaller, correr la siguiente linea:
+Mediante pyinstaller, correr la siguiente linea:
 
 ```
 pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/{RUTA AL PROYECTO}/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/{RUTA AL PROYECTO}/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/{RUTA AL PROYECTO}/AppZendesk/main.py"

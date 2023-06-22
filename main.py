@@ -5,6 +5,7 @@ import CTkScrollableDropdown
 from CTkScrollableDropdown import *
 from CTkTable import *
 from CTkMessagebox import CTkMessagebox
+import time
 
 customtkinter.set_appearance_mode("light") #"system", "dark" y "light"
 customtkinter.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
@@ -616,6 +617,10 @@ class App(customtkinter.CTk):
                         response = requests.post(ticket_url, auth=(user + "/token", token), json=ticket_data)
                         if response.status_code == 201:
                             print("Ticket creado correctamente.", response.status_code)
+                        elif response.status_code == 429:
+                            seconds_to_wait = int(response.headers["Retry-After"])
+                            print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait, "segundos.")
+                            time.sleep(seconds_to_wait)
                         else:
                             print("Error al crear el ticket. Código de respuesta:", response.status_code)
                             print("Respuesta del servidor:", response.json())

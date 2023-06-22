@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = []
+datas = [('C:/Users/aparedes/PycharmProjects/AppZendesk/agentes.json', '.'), ('C:/Users/aparedes/PycharmProjects/AppZendesk/usuarios_zendesk.json', '.'), ('C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox', 'CTkMessagebox/'), ('C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown', 'CTkScrollableDropdown/')]
 binaries = []
 hiddenimports = []
 tmp_ret = collect_all('customtkinter')
@@ -12,7 +12,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['main.py'],
+    ['C:/Users/aparedes/PycharmProjects/AppZendesk/main.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,

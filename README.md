@@ -69,7 +69,7 @@ Comenzará el proceso de notificación, para luego dejar en la carpeta un excel 
 
 ## Anexo
 
-La app debe tener en la misma carpeta los archivos "agentes.json" y "usuarios_zendesk.json". Estos archivos deben generarse de la siguiente forma, considerando como insumo el archvo "json_usuarios.json" descargado de la API:
+La APP debe tener en la misma carpeta los archivos "agentes.json" y "usuarios_zendesk.json". Estos archivos deben generarse de la siguiente forma, considerando como insumo el archvo "json_usuarios.json" descargado de la API:
 
 ```
 from tqdm import tqdm

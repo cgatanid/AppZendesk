@@ -24,6 +24,8 @@ dic_agentes = df_agentes.to_dict(orient='records')
 df_usuarios = pd.read_json('usuarios_zendesk.json')
 dic_usuarios = df_usuarios.to_dict(orient='records')
 
+# pyinstaller --noconfirm --onedir --windowed --name "AppZendesk" -F main.py --collect-all customtkinter -w
+# pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/agentes.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/usuarios_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
 
 class ToplevelWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):

@@ -4,6 +4,24 @@
 APP para envío masivo de tickets mediante conexión a la API de Zendesk.
 
 
+## 0 - Instalar librerías del proyecto.
+
+Luego de clonar el repo, instalar las librerias del proyecto ejecutando en la consola el archivo "requirements.txt".
+
+```
+pip install -r requirements.txt
+```
+
+mediante pyinstaller, correr la siguiente linea:
+
+```
+pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/{RUTA AL PROYECTO}/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/{RUTA AL PROYECTO}/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/{RUTA AL PROYECTO}/AppZendesk/main.py"
+
+```
+
+
+
+
 ## 1 - Seleccionar ID's de usuarios a contactar
 
 <div align="center">

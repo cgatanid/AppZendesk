@@ -1,5 +1,4 @@
 # AppZendesk
----
 
 
 APP para envío masivo de tickets mediante conexión a la API de Zendesk.

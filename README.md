@@ -32,7 +32,7 @@ Luego de cumplir el paso anterior, es necesario presionar el botón para cargar 
 ## 4 - Seleccionar agente que notificará
 
 
-Mediante la primera caja superior del costado derecho, es posible hacer dobleclick y desplazarse por la lista para seleccionar al Agente que emitirá la comunicación.
+Mediante la primera caja superior del costado derecho, es posible hacer doble click y desplazarse por la lista para seleccionar al Agente que emitirá la comunicación.
 
 <div align="center">
     <img src="imagenes/cuatro.png" alt="Texto alternativo de la imagen">

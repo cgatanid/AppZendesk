@@ -6,92 +6,312 @@ from CTkScrollableDropdown import *
 from CTkTable import *
 from CTkMessagebox import CTkMessagebox
 import time
+import pandas as pd
+from tqdm import tqdm
+from zenpy import Zenpy
+import json
+import requests
 
 customtkinter.set_appearance_mode("light") #"system", "dark" y "light"
 customtkinter.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
 
-import json
-
 # Abrir el archivo JSON
-with open('agentes.json', 'r') as json_file:
+with open('agentes_zendesk.json', 'r') as json_file:
     agentes = json.load(json_file)
 
 values = [item['name'] for item in agentes]
 
-import pandas as pd
 # Convertir el JSON a DataFrame
-df_agentes = pd.read_json('agentes.json')
+df_agentes = pd.read_json('agentes_zendesk.json')
 dic_agentes = df_agentes.to_dict(orient='records')
 df_usuarios = pd.read_json('usuarios_zendesk.json')
 dic_usuarios = df_usuarios.to_dict(orient='records')
 
-# pyinstaller --noconfirm --onedir --windowed --name "AppZendesk" -F main.py --collect-all customtkinter -w
-# pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/agentes.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/usuarios_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
+# Leer el archivo JSON
+with open('formularios_zendesk.json', 'r') as file:
+    data = json.load(file)
 
-class ToplevelWindow(customtkinter.CTkToplevel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.title("Progreso del envío de Tickets")
-        self.geometry("400x200")
+# Acceder a la lista de formularios
+json_ticket_forms = data['ticket_forms']  # luego en la variable ticket_forms usa para tener todos los formularios
 
-        self.label = customtkinter.CTkLabel(self, text="Progreso del envío")
-        self.label.pack(padx=20, pady=20)
+# Filtrar los formularios cuyo título comienza con 'SCH'
+filtered_forms = [formulario for formulario in json_ticket_forms if formulario['form_title'].startswith(
+    'SCH')]  # Aqui, lo que està pasando es que como se define luego en el boton los valores que puede tomar, solo se mostraran los de la SCH, pero si se deja sin comentario la de abajo, se estarian desplegando todos los formularios
+# filtered_forms = [formulario for formulario in json_ticket_forms if formulario['form_title']]
 
-        self.progressbar = customtkinter.CTkProgressBar(self)
-        self.progressbar.pack(pady=20)
-        self.progressbar.set(0)
+def cargar_todo():
+    # Abrir el archivo JSON
+    with open('agentes_zendesk.json', 'r') as json_file:
+        agentes = json.load(json_file)
 
-    def test(self, n):
-        self.progressbar.start()
+    values = [item['name'] for item in agentes]
 
-        for x in range(n):
-            progress_percentage = (x / n) * 100  # Calcular el porcentaje de progreso actual
-            self.progressbar.set(progress_percentage)  # Actualizar la barra de progreso con el porcentaje
+    # Convertir el JSON a DataFrame
+    df_agentes = pd.read_json('agentes_zendesk.json')
+    dic_agentes = df_agentes.to_dict(orient='records')
+    df_usuarios = pd.read_json('usuarios_zendesk.json')
+    dic_usuarios = df_usuarios.to_dict(orient='records')
 
-            self.update_idletasks()
+    # Leer el archivo JSON
+    with open('formularios_zendesk.json', 'r') as file:
+        data = json.load(file)
 
-        self.progressbar.stop()
+    # Acceder a la lista de formularios
+    json_ticket_forms = data['ticket_forms']  # luego en la variable ticket_forms usa para tener todos los formularios
+
+    # Filtrar los formularios cuyo título comienza con 'SCH'
+    filtered_forms = [formulario for formulario in json_ticket_forms if formulario['form_title'].startswith(
+        'SCH')]  # Aqui, lo que està pasando es que como se define luego en el boton los valores que puede tomar, solo se mostraran los de la SCH, pero si se deja sin comentario la de arriba, se estarian desplegando todos los formularios
+    # filtered_forms = [formulario for formulario in json_ticket_forms if formulario['form_title']]
+    print("Carga Completa")
+
+
+# pyinstaller --noconfirm --onefile --console --name "AppZendesk" -F main.py --collect-all customtkinter -w
+# pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/agentes_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/usuarios_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
+# pyinstaller --noconfirm --onefile --windowed --name "AppZendeskV5" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
+# pyinstaller --noconfirm --onefile --console --name "AppZendesk (CC)" --add-data "CTkMessagebox;CTkMessagebox/" --add-data "CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter  main.py
+
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         # configure window
         self.title("Zendesk Envío de Tickets Masivos")
-        self.geometry(f"{1320}x{700}")
+        self.geometry(f"{1320}x{720}")
+
 
         # configure grid layout
-        self.grid_columnconfigure((0,1,2), weight=1)
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure((1,2,3), weight=1)
         self.grid_rowconfigure((0,1,2,3), weight=1)
 
         self.scaling_optionemenu = customtkinter.CTkOptionMenu(self,
                                                                values=["60%", "70%", "80%", "90%", "100%", "110%",
-                                                                       "120%", "130%", "140%"],
+                                                                       "120%", "130%", "140%", "150%"],
                                                                command=self.change_scaling_event)
-        self.scaling_optionemenu.grid(row=5, column=0, padx=60, pady=(20, 20), sticky="w")
+        self.scaling_optionemenu.grid(row=5, column=0, columnspan=2, padx=60, pady=(20, 20), sticky="w")
         self.scaling_optionemenu.set("100%")
 
 
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self,
                                                                        values=["Light", "Dark", "System"],
                                                                        command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=5, column=0, padx=60, pady=(20, 20), sticky="e")
-        self.appearance_mode_optionemenu.set("Dark")
+        self.appearance_mode_optionemenu.grid(row=5, column=0, columnspan=2, padx=60, pady=(20, 20), sticky="e")
+        self.appearance_mode_optionemenu.set("Light")
 
+        # ········································· BOTONES ACTUALIZACION ·················································
+        def usuarios():
+            self.progressbar.set(0)
+            zenpy_client = Zenpy(domain='zendesk.com', subdomain='conicytoirs', email="pfcha_staff@anid.cl", token='aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR')
+            # Obtener la lista de usuarios
+            users = zenpy_client.users()
+            data = []
+            # Recorrer todos los usuarios con barra de progreso
+            for index, user in enumerate(tqdm(users, desc="Procesando usuarios", unit='user'), start=1):
+                data.append(user.to_dict())  # Convertir el usuario a un diccionario y agregarlo a la lista
+                if index == len(users):
+                    # Guardar la lista de usuarios en el archivo JSON
+                    with open("json_usuarios.json", "w") as file:
+                        json.dump(data, file, indent=2)
+                    # Leer el archivo JSON como un DataFrame
+                    df_users = pd.read_json("json_usuarios.json")
+
+                    # Convertir datetimes a timezone-unaware
+                    df_users["created_at"] = df_users["created_at"].dt.tz_convert(None)
+                    df_users["last_login_at"] = df_users["last_login_at"].dt.tz_convert(None)
+                    df_users["updated_at"] = df_users["updated_at"].dt.tz_convert(None)
+
+                    # Expandir el diccionario 'user_fields' en columnas individuales
+                    df_users = pd.concat(
+                        [df_users.drop(['user_fields'], axis=1), df_users['user_fields'].apply(pd.Series)],
+                        axis=1)
+                    # Obtener la cantidad de registros en el DataFrame
+                    total_rows = len(df_users)
+
+                    # Guardar el DataFrame resultante en un archivo de Excel y Json
+                    df_users.to_excel("Usuarios.xlsx", index=False)
+                    df_users[["id", "name", "email"]].to_json("usuarios_zendesk.json")
+
+                # Actualizar la barra de progreso
+                self.progressbar.set(index / len(users))
+                self.update()  # Actualizar la interfaz gráfica
+
+            print("Descarga Exitosa")
+            cargar_todo()
+
+        def agentes():
+            self.progressbar.set(0)
+            zenpy_client = Zenpy(domain='zendesk.com', subdomain='conicytoirs', email="pfcha_staff@anid.cl",
+                                 token='aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR')
+
+            agents = zenpy_client.search("role:admin role:agent", type='user', sort_by='name', sort_order='desc')
+            data = []
+            for index, agent in enumerate(tqdm(agents, desc="Procesando agentes", unit='agent'), start=1):
+                data.append(agent.to_dict())
+
+                if index == len(agents):
+                    # Guardar la lista de usuarios en el archivo JSON
+                    with open("agentes_zendesk.json", "w") as file:
+                        json.dump(data, file, indent=2)
+                    # Leer el archivo JSON como un DataFrame
+                    df_agents = pd.read_json("agentes_zendesk.json")
+
+                    # Convertir datetimes a timezone-unaware
+                    df_agents["created_at"] = df_agents["created_at"].dt.tz_convert(None)
+                    df_agents["last_login_at"] = df_agents["last_login_at"].dt.tz_convert(None)
+                    df_agents["updated_at"] = df_agents["updated_at"].dt.tz_convert(None)
+
+                    # Guardar el DataFrame resultante en un archivo de Excel y Json
+                    df_agents.to_excel("Agentes.xlsx", index=False)
+                    df_agents[df_agents['role'] != 'end-user'][["id", "name", "email"]].to_json("agentes_zendesk.json", orient='records')
+
+                # Actualizar la barra de progreso
+                self.progressbar.set(index / len(agents))
+                self.update()  # Actualizar la interfaz gráfica
+            print("Descarga Exitosa")
+            cargar_todo()
+
+        def formularios():
+            time.sleep(1)
+            self.progressbar.set(0)
+            time.sleep(2)
+
+            # Configurar las credenciales de la API de Zendesk
+            user = "pfcha_staff@anid.cl"
+            token = "aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR"
+            url_forms = "https://conicytoirs.zendesk.com/api/v2/ticket_forms.json"
+
+            data = {"ticket_forms": []}
+            max_retries1 = 3
+            retries1 = 0
+
+            while retries1 < max_retries1:
+                try:
+                    response = requests.get(url_forms, auth=(user + "/token", token))
+                    if response.status_code == 200:
+                        ticket_forms = response.json()["ticket_forms"]
+                        for index, form in enumerate(tqdm(ticket_forms, desc="Procesando formularios", unit='form'),
+                                                     start=1):
+                            form_data = {
+                                "form_id": form["id"],
+                                "form_title": form["name"],
+                                "form_fields": []
+                            }
+                            for field_id in form['ticket_field_ids']:
+                                url = 'https://conicytoirs.zendesk.com/api/v2/ticket_fields/{}.json'
+                                max_retries2 = 3
+                                retries2 = 0
+
+                                while retries2 < max_retries2:
+                                    try:
+                                        response_field = requests.get(url.format(field_id),
+                                                                      auth=(user + "/token", token))
+                                        response_field.raise_for_status()
+
+                                        if response_field.status_code == 200:
+                                            field_data = response_field.json()['ticket_field']
+                                            field_name = field_data['title']
+                                            form_data["form_fields"].append({
+                                                "field_id": field_id,
+                                                "field_title": field_name
+                                            })
+                                            break  # Salir del bucle while si la solicitud fue exitosa
+
+                                        elif response_field.status_code == 429:
+                                            seconds_to_wait = int(response.headers["Retry-After"])
+                                            print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait,
+                                                  "segundos.")
+                                            time.sleep(seconds_to_wait)
+                                            retries1 += 1
+                                            if retries2 == max_retries2:
+                                                field_data = response_field.json()['ticket_field']
+                                                field_name = "field_data['title']"
+                                                form_data["form_fields"].append({
+                                                    "field_id": "field_id",
+                                                    "field_title": "field_name"})
+                                        else:
+                                            print('Error al obtener el campo con ID {}: {}'.format(field_id,
+                                                                                                   response_field.status_code))
+                                            time.sleep(3)
+                                            retries2 += 1
+                                            if retries2 == max_retries2:
+                                                field_data = response_field.json()['ticket_field']
+                                                field_name = "field_data['title']"
+                                                form_data["form_fields"].append({
+                                                    "field_id": "field_id",
+                                                    "field_title": "field_name"})
+
+                                    except requests.exceptions.SSLError:
+                                        print('Error SSL. Reintentando la solicitud...')
+                                        retries2 += 1
+                                        time.sleep(3)  # Esperar 3 segundos antes de reintentar
+
+                            data["ticket_forms"].append(form_data)
+                            self.progressbar.set(index / len(ticket_forms))
+                            self.update()
+
+                        break  # Salir del bucle while si la solicitud fue exitosa
+
+                    elif response.status_code == 429:
+                        seconds_to_wait = int(response.headers["Retry-After"])
+                        print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait, "segundos.")
+                        time.sleep(seconds_to_wait)
+                        retries1 += 1
+
+                    else:
+                        print("Error al obtener los formularios. Código de estado:", response.status_code)
+                        time.sleep(3)
+                        retries1 += 1
+
+                except requests.exceptions.SSLError:
+                    print('Error SSL. Reintentando la solicitud...')
+                    retries1 += 1
+                    time.sleep(3)  # Esperar 3 segundos antes de reintentar
+
+            # Guardar los datos en un archivo JSON
+            with open("formularios_zendesk.json", "w") as file:
+                json.dump(data, file)
+
+            # Leer el archivo JSON
+            with open('formularios_zendesk.json', 'r') as file:
+                data = json.load(file)
+
+            # Aplanar los diccionarios en columnas del DataFrame
+            df = pd.json_normalize(data, 'ticket_forms', errors='ignore')
+            df = df.explode('form_fields')
+            df = pd.concat([df.drop(['form_fields'], axis=1), df['form_fields'].apply(pd.Series)], axis=1)
+
+            df.to_excel("Formularios.xlsx", index=False)
+            print("Descarga Exitosa")
+            cargar_todo()
+
+
+        update_frame = customtkinter.CTkFrame(self)
+        update_frame.grid(row=0, column=0, rowspan=3, padx=10, pady=5, sticky="nsew")
+
+        update_label = customtkinter.CTkLabel(update_frame, text="Actualización")
+        update_label.pack(side="top")
+
+        self.update_usuarios = customtkinter.CTkButton(update_frame, text="Usuarios", command=usuarios)
+        self.update_usuarios.pack(side="top", padx=10, pady=10, expand=True, fill="both")
+
+        self.update_agentes = customtkinter.CTkButton(update_frame, text="Agentes", command=agentes)
+        self.update_agentes.pack(padx=10, pady=10, expand=True, fill="both")
+
+        self.update_formularios = customtkinter.CTkButton(update_frame, text="Formularios", command=formularios)
+        self.update_formularios.pack(side="bottom", padx=10, pady=10, expand=True, fill="both")
 
 
         # ········································· USUARIOS  ·················································
 
-        carga_frame = customtkinter.CTkFrame(self)
-        carga_frame.grid(row=0, column=0, rowspan=3, padx=10, pady=5, sticky="nsew")
 
-        carga_label = customtkinter.CTkLabel(carga_frame, text="Ingresar ID's separados por coma (,)")
+        carga_frame = customtkinter.CTkFrame(self)
+        carga_frame.grid(row=0, column=1, rowspan=3, padx=10, pady=5, sticky="nsew")
+
+        carga_label = customtkinter.CTkLabel(carga_frame, text="Ingresar ID's")
         carga_label.pack(side="top")
 
-
-        def button_event():
-            print("button pressed")
-
-        self.textbox_carga = customtkinter.CTkTextbox(carga_frame, width=420, height=100)
+        self.textbox_carga = customtkinter.CTkTextbox(carga_frame, width=150, height=100)
         self.textbox_carga.pack(padx=10, pady=10, expand=True, fill="both")
 
         def buscar_por_id(usuarios, ids):
@@ -100,23 +320,32 @@ class App(customtkinter.CTk):
 
         def leer_ids():
             ids_buscados = self.textbox_carga.get("0.0", "end-1c")
-            #ids_lista = [int(id) for id in ids_buscados.split(',')]
-            ids_lista = []
-
+            print(ids_buscados)
             try:
-                ids_lista = [int(id) for id in ids_buscados.split(',')]
+                ids_lista = ids_buscados.strip().splitlines()
+                ids_lista = list(map(int, [item for sublist in ids_lista for item in sublist.split()]))
+                print("OK")
             except ValueError:
-                print("Error: Los ID's ingresados no son válidos.")
-                def show_error_1():
-                    # Show some error message
-                    CTkMessagebox(title="Error",
-                                  message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma a excepción del ultimo valor y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
-                                  icon="cancel")
-                show_error_1()
+                try:
+                    ids_lista = [int(id) for id in ids_buscados.split(',')]
+                    print("OK 2")
+                except ValueError:
+                    try:
+                        ids_lista = ids_buscados.replace(" ", "")
+                        ids_lista = ids_lista.split(",")
+                        ids_lista = list(map(int, [item for sublist in ids_lista for item in sublist.split()]))
+                        print("OK 3")
+                    except ValueError:
+                        def show_error_1():
+                            # Show some error message
+                            CTkMessagebox(title="Error",
+                                          message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma a excepción del ultimo valor y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
+                                          icon="cancel")
+                        show_error_1()
+                        return
 
             print(ids_lista)
 
-            print(ids_lista)
             def buscar_por_id(usuarios, ids):
                 resultados = [usuario for usuario in usuarios if usuario.get('id') in ids]
                 return resultados
@@ -144,19 +373,12 @@ class App(customtkinter.CTk):
                                   icon="check", option_1="Muy bien")
                 show_checkmark()
 
-            #resultados = pd.DataFrame(resultados)
-            #print(resultados)
-            #for _, row in resultados.iterrows():
-            #    val = (row['name'], row['email'])
-            #    self.treeview.insert('', 'end', text=str(row['id']), values=val)
-
-
         self.cargar = customtkinter.CTkButton(carga_frame, text="Cargar ID's", command=leer_ids)
         self.cargar.pack(padx=10, pady=10)
 
         # ········································· USUARIOS TABLA  ·················································
         tabla_frame = customtkinter.CTkFrame(self)
-        tabla_frame.grid(row=3, column=0, rowspan=2, padx=10, pady=5, sticky="nsew")
+        tabla_frame.grid(row=3, column=0, columnspan=2, rowspan=2, padx=10, pady=5, sticky="nsew")
 
         tabla_label = customtkinter.CTkLabel(tabla_frame, text="Usuarios a notificar")
         tabla_label.pack(side="top")
@@ -164,7 +386,7 @@ class App(customtkinter.CTk):
         # Scrollbar
         self.scrollbar = ttk.Scrollbar(tabla_frame)
         #self.scrollbar.grid(row=3, column=0, rowspan=4, sticky="ne")
-        # self.scrollbar.place(x=1250, y=290)
+        #self.scrollbar.place(x=1250, y=290)
 
         # Treeview
         self.treeview = ttk.Treeview(
@@ -199,7 +421,7 @@ class App(customtkinter.CTk):
         default = customtkinter.CTkLabel(self, text="Seleccionar Agente")
 
         self.entry_0 = customtkinter.CTkEntry(self, width=640)
-        self.entry_0.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.entry_0.grid(row=0, column=2, columnspan=2, padx=10, pady=10, sticky="ew")
 
         self.selected_value = tkinter.StringVar()
 
@@ -218,75 +440,19 @@ class App(customtkinter.CTk):
         #CTkScrollableDropdown(self.optionmenu, values=values, justify="left")
 
         #········································ PRODUCTOS ·················································
-        ticket_forms = [
-            {
-                'ticket_form_id': 360003496052,
-                'ticket_form_name': 'SCH-Trámites Generales Becarios Depto. Formación Capital Humano',
-                'fields': [
-                    {'field_id': 360012823751, 'field_name': 'Estado'},
-                    {'field_id': 360012823811, 'field_name': 'Grupo'},
-                    {'field_id': 360012823831, 'field_name': 'Agente asignado'},
-                    {'field_id': 9648003197972, 'field_name': 'Ticket status'},
-                    {'field_id': 4416517088276, 'field_name': 'ID Mesa Antigua'},
-                    {'field_id': 360049147651, 'field_name': 'SCH-Productos gestión de becarios'},
-                    {'field_id': 360012823711, 'field_name': 'Asunto'},
-                    {'field_id': 360012823731, 'field_name': 'Descripción'},
-                    {'field_id': 360012823791, 'field_name': 'Prioridad'},
-                    {'field_id': 360049098492, 'field_name': 'Folio'},
-                    {'field_id': 1900002772607, 'field_name': 'RUN'},
-                    {'field_id': 1900002772667, 'field_name': 'Gestión en Departamento de Apoyo'},
-                    {'field_id': 360049147671, 'field_name': 'TED asociado'},
-                    {'field_id': 360049098472, 'field_name': 'Resolución asociada'},
-                    {'field_id': 360049147691, 'field_name': 'Prepara TED'},
-                    {'field_id': 1900002772647, 'field_name': 'Apoyo administrativo'},
-                    {'field_id': 5739531550740, 'field_name': 'SCH-N° de ticket en mesa de ayuda Depto de Apoyo Antigua'},
-                    {'field_id': 1900002772627, 'field_name': 'ActivaTracking'}
-                ]
-            },
-            {
-                'ticket_form_id': 4417337313172,
-                'ticket_form_name': 'SCH-Trámites generales Depto. Financiero',
-                'fields': [
-                    {'field_id': 360012823751, 'field_name': 'Estado'},
-                    {'field_id': 360012823811, 'field_name': 'Grupo'},
-                    {'field_id': 360012823831, 'field_name': 'Agente asignado'},
-                    {'field_id': 9648003197972, 'field_name': 'Ticket status'},
-                    {'field_id': 360012823711, 'field_name': 'Asunto'},
-                    {'field_id': 360012823731, 'field_name': 'Descripción'},
-                    {'field_id': 360012823791, 'field_name': 'Prioridad'},
-                    {'field_id': 4417350044052, 'field_name': 'SCH-Productos del Depto. Financiero'}
-                ]
-            },
-            {
-                'ticket_form_id': 4416360583956,
-                'ticket_form_name': 'SCH-Trámites Generales Depto. Inserción',
-                'fields': [
-                    {'field_id': 360012823751, 'field_name': 'Estado'},
-                    {'field_id': 360012823811, 'field_name': 'Grupo'},
-                    {'field_id': 360012823831, 'field_name': 'Agente asignado'},
-                    {'field_id': 9648003197972, 'field_name': 'Ticket status'},
-                    {'field_id': 7947034060308, 'field_name': 'SCH-Productos del Depto. Inserción'},
-                    {'field_id': 360012823711, 'field_name': 'Asunto'},
-                    {'field_id': 360012823731, 'field_name': 'Descripción'},
-                    {'field_id': 360012823791, 'field_name': 'Prioridad'},
-                    {'field_id': 360048882892, 'field_name': 'Folio / Código de Proyecto *'},
-                    {'field_id': 7972026531476, 'field_name': 'SCH-Instrumento Inserción'},
-                    {'field_id': 7972091141268, 'field_name': 'SCH-Convocatoria'},
-                    {'field_id': 1900002772667, 'field_name': 'Gestión en Departamento de Apoyo'},
-                    {'field_id': 360049147671, 'field_name': 'TED asociado'}
-                ]
-            }
-        ]
-        values_1 = [ticket_forms[0]['ticket_form_name'], ticket_forms[1]['ticket_form_name'], ticket_forms[2]['ticket_form_name']]
+        #ticket_forms = filtered_forms # Solo las de SCH
+        ticket_forms = json_ticket_forms # Todas
+
+        # Obtener solo los nombres de los formularios filtrados
+        ticket_form_names = [formulario['form_title'] for formulario in filtered_forms]
 
         def combobox_callback(choice):
             print("combobox dropdown clicked:", choice)
 
         default_1 = customtkinter.StringVar(value="Seleccionar tipo de producto")
         self.optionmenu_1 = customtkinter.CTkComboBox(self, width=640, command=combobox_callback, variable=default_1)
-        self.optionmenu_1.grid(row=1, column=1, columnspan=2, padx=10, pady=10, sticky="ew")
-        CTkScrollableDropdown(self.optionmenu_1, values=values_1, justify="left", height=700)
-
+        self.optionmenu_1.grid(row=1, column=2, columnspan=2, padx=10, pady=10, sticky="ew")
+        CTkScrollableDropdown(self.optionmenu_1, values=ticket_form_names, justify="left", height=700)
 
         #······································ ESTADO DEL TICKET ·················································
 
@@ -294,7 +460,7 @@ class App(customtkinter.CTk):
             print("radiobutton toggled, current value:", radio_var.get())
 
         estado_frame = customtkinter.CTkFrame(self)
-        estado_frame.grid(row=2, column=1, padx=10, pady=5, sticky="nsew")
+        estado_frame.grid(row=2, column=2, padx=10, pady=5, sticky="nsew")
 
         estado_label = customtkinter.CTkLabel(estado_frame, text="Estado del ticket")
         estado_label.pack(side="top", expand=True, fill="both")
@@ -309,9 +475,9 @@ class App(customtkinter.CTk):
 
         # ································ PRIORIDAD DEL TICKET ·················································
 
-        prioridad_frame = customtkinter.CTkFrame(self)
-        prioridad_frame.grid(row=2, column=2, padx=10, pady=5, sticky="nsew")
-        prioridad_label = customtkinter.CTkLabel(prioridad_frame, text="Tipo de Prioridad")
+        prioridad_frame = customtkinter.CTkFrame(self, width=400)
+        prioridad_frame.grid(row=2, column=3, padx=10, pady=5, sticky="nsew")
+        prioridad_label = customtkinter.CTkLabel(prioridad_frame, text="Tipo de prioridad")
         prioridad_label.pack(side="top", expand=True, fill="both")
 
         self.segemented_button_var_1 = customtkinter.StringVar(value="Normal")
@@ -323,20 +489,21 @@ class App(customtkinter.CTk):
         #····································· ASUNTO DEL MENSAJE ··········································
 
         self.entry = customtkinter.CTkEntry(self, placeholder_text="Escribir asunto del mensaje", width=750)
-        self.entry.grid(row=3, column=1, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.entry.grid(row=3, column=2, columnspan=2, padx=10, pady=10, sticky="ew")
         #self.entry.place(x=100, y=270)
 
         # ········································ MENSAJE ·················································
         # create textbox
         self.textbox = customtkinter.CTkTextbox(self, width=800, height=300)
 
-        self.textbox.grid(row=4, column=1, columnspan=2, padx=10, pady=10, sticky="nsew")
+        self.textbox.grid(row=4, column=2, columnspan=2, padx=10, pady=10, sticky="nsew")
 
         self.textbox.insert("0.0","Insertar mensaje")
-        self.textbox_carga.insert("0.0", "Cargar ID's")
+        self.textbox_carga.insert("0.0", "")
 
         def envio():
             print("button pressed")
+            self.progressbar.set(0)
             ask_question()
 
         def borrar():
@@ -348,38 +515,43 @@ class App(customtkinter.CTk):
             self.textbox.delete('1.0', 'end')
             self.textbox_carga.delete('1.0', 'end')
             self.treeview.delete(*self.treeview.get_children())
+            self.progressbar.set(0)
 
         self.button = customtkinter.CTkButton(self, text="Limpiar", command=borrar)
-        self.button.grid(row=5, column=1, padx=20, pady=10)
+        self.button.grid(row=5, column=2, padx=20, pady=10)
         self.button_1 = customtkinter.CTkButton(self, text="Enviar Tickets", command=envio)
-        self.button_1.grid(row=5, column=2, padx=20, pady=10)
-        self.toplevel_window = None
+        self.button_1.grid(row=5, column=3, padx=20, pady=10)
+        self.progressbar = customtkinter.CTkProgressBar(self, height=16)
+        self.progressbar.grid(row=6, column=0, columnspan=4, padx=20, pady=10, sticky="nsew")
+        self.progressbar.configure(progress_color='green')
 
-        def open_toplevel():
-            if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-                self.toplevel_window = ToplevelWindow(self)  # create window if its None or destroyed
-            else:
-                self.toplevel_window.focus()  # if window exists focus it
+        self.progressbar.set(0)
 
         def ask_question():
             # get yes/no answers
 
             ids_buscados = self.textbox_carga.get("0.0", "end-1c")
-            # ids_lista = [int(id) for id in ids_buscados.split(',')]
             ids_lista = []
 
             try:
-                ids_lista = [int(id) for id in ids_buscados.split(',')]
+                ids_lista = ids_buscados.strip().splitlines()
+                ids_lista = list(map(int, [item for sublist in ids_lista for item in sublist.split()]))
             except ValueError:
-                print("Error: Los ID's ingresados no son válidos.")
-
-                def show_error_1():
-                    # Show some error message
-                    CTkMessagebox(title="Error",
-                                  message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma a excepción del ultimo valor y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
-                                  icon="cancel")
-                show_error_1()
-                return
+                try:
+                    ids_lista = [int(id) for id in ids_buscados.split(',')]
+                except ValueError:
+                    try:
+                        ids_lista = ids_buscados.replace(" ", "")
+                        ids_lista = ids_lista.split(",")
+                        ids_lista = list(map(int, [item for sublist in ids_lista for item in sublist.split()]))
+                    except ValueError:
+                        def show_error_1():
+                            # Show some error message
+                            CTkMessagebox(title="Error",
+                                          message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma a excepción del ultimo valor y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
+                                          icon="cancel")
+                        show_error_1()
+                        return
 
             resultados = buscar_por_id(dic_usuarios, ids_lista)
             print("Usuarios a contactar:", resultados)
@@ -391,7 +563,7 @@ class App(customtkinter.CTk):
                 response = msg.get()
 
                 if response == "Aceptar":
-                    print("enviando")
+                    print("Enviando")
                     forms = ticket_forms.copy()
                     agente = self.entry_0.get()
                     print("Agente ingresado:", agente)
@@ -408,8 +580,8 @@ class App(customtkinter.CTk):
 
                     def buscar_ticket_form_id(forms, ticket_form_name):
                         for form in forms:
-                            if form['ticket_form_name'] == ticket_form_name:
-                                return form['ticket_form_id']
+                            if form['form_title'] == ticket_form_name:
+                                return form['form_id']
                         return None
 
                     nombre_formulario = producto
@@ -418,8 +590,8 @@ class App(customtkinter.CTk):
 
                     def buscar_fields_por_form_id(forms, ticket_form_id):
                         for form in forms:
-                            if form.get('ticket_form_id') == ticket_form_id:
-                                return form.get('fields', [])
+                            if form.get('form_id') == ticket_form_id:
+                                return form.get('form_fields', [])
                         return []
 
                     fields = buscar_fields_por_form_id(forms, ticket_form_id)
@@ -433,7 +605,7 @@ class App(customtkinter.CTk):
 
                     for item in fields_api:
                         if 'value' not in item:
-                            item['value'] = item.pop('field_name')
+                            item['value'] = item.pop('field_title')
 
                     for item in fields_api:
                         if item['id'] == 360049147651:
@@ -611,28 +783,44 @@ class App(customtkinter.CTk):
                     # Enviar una solicitud para crear cada ticket
                     ticket_url = "https://conicytoirs.zendesk.com/api/v2/tickets.json"
 
-                    open_toplevel()
+                    max_attempts = 3  # Número máximo de intentos permitidos por ticket
 
                     for i, ticket_data in enumerate(tickets, start=1):
-                        response = requests.post(ticket_url, auth=(user + "/token", token), json=ticket_data)
-                        if response.status_code == 201:
-                            print("Ticket creado correctamente.", response.status_code)
-                        elif response.status_code == 429:
-                            seconds_to_wait = int(response.headers["Retry-After"])
-                            print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait, "segundos.")
-                            time.sleep(seconds_to_wait)
-                        else:
-                            print("Error al crear el ticket. Código de respuesta:", response.status_code)
-                            print("Respuesta del servidor:", response.json())
-                        json_response.append(response.json())
-                        print(i)
-                        self.toplevel_window.test(i)
+                        attempts = 0
+                        while attempts < max_attempts:
+                            try:
+                                response = requests.post(ticket_url, auth=(user + "/token", token), json=ticket_data)
+                                if response.status_code == 201:
+                                    print("Ticket creado correctamente.", response.status_code)
+                                    json_response.append(response.json())
+                                    break  # Se ha creado el ticket, se sale del bucle while
+                                elif response.status_code == 429:
+                                    seconds_to_wait = int(response.headers["Retry-After"])
+                                    print("API transfer rate sobrepasada. Esperar:", seconds_to_wait, "segundos.")
+                                    time.sleep(seconds_to_wait)
+                                    attempts += 1
+                                    if attempts == max_attempts:
+                                        print("Se ha alcanzado el número máximo de intentos para el ticket:", i)
+                                        json_response.append(response.json())
+                                else:
+                                    print("Error al crear el ticket. Código de respuesta:", response.status_code)
+                                    print("Respuesta del servidor:", response.json())
+                                    json_response.append(response.json())
+                                    break  # Se ha producido un error, se sale del bucle while
+                            except requests.exceptions.SSLError:
+                                print('Error SSL. Reintentando la solicitud...')
+                                attempts += 1
+                                time.sleep(3)  # Esperar 3 segundos antes de reintentar
+
+                        self.progressbar.set(i / len(tickets))
+                        self.progressbar.get()
+                        self.update()
+
+                    self.progressbar.stop()
 
                     print("completado")
                     ############################################################################################
                     import pandas as pd
-
-                    # Obtener la respuesta como objeto JSON
                     # Guardar las respuestas en un archivo JSON
                     with open("responses.json", "w") as file:
                         json.dump(json_response, file)
@@ -641,7 +829,12 @@ class App(customtkinter.CTk):
                     df = pd.json_normalize(json_response)
                     df.to_excel("Seguimiento_tickets.xlsx", index=False)
                     ######################################END COLAB##############################################
-
+                    def show_finish():
+                        # Show some error message
+                        CTkMessagebox(title="Felicitaciones",
+                                      message=f"Se ha logrado enviar un total de {len(tickets)} tickets mediante Zendesk API. En la carpeta en donde se aloja la APP se ha generado el archivo 'Seguimiento_tickets.xlsx', para verificar el detalle de cada envío.",
+                                      icon="check")
+                    show_finish()
                 else:
                     print("Cancelado")
                     return

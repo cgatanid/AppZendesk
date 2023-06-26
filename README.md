@@ -19,7 +19,9 @@ pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/
 
 ```
 
-
+<div align="center">
+    <img src="imagenes/cero.png" alt="Texto alternativo de la imagen">
+</div>
 
 
 ## 1 - Seleccionar ID's de usuarios a contactar

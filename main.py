@@ -78,7 +78,7 @@ def cargar_todo():
 # pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/agentes_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/usuarios_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
 # pyinstaller --noconfirm --onefile --windowed --name "AppZendeskV5" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
 # pyinstaller --noconfirm --onefile --console --name "APP Zendesk (Console)" --upx-dir "C:/Users/aparedes/PycharmProjects/AppZendesk/upx-4.0.2-win64" --add-data "CTkMessagebox;CTkMessagebox/" --add-data "CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter  main.py
-
+# pyinstaller --noconfirm --onefile --console --name "APP Zendesk (Console)" --add-data "CTkMessagebox;CTkMessagebox/" --add-data "CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter  main.py
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -889,7 +889,7 @@ class App(customtkinter.CTk):
                             except requests.exceptions.SSLError:
                                 print('Error SSL. Reintentando la solicitud...')
                                 attempts += 1
-                                time.sleep(3)  # Esperar 3 segundos antes de reintentar"""
+                                time.sleep(3)  # Esperar 3 segundos antes de reintentar
 
                         self.progressbar.set(i / len(tickets))
                         self.progressbar.get()

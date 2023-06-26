@@ -11,6 +11,7 @@ from tqdm import tqdm
 from zenpy import Zenpy
 import json
 import requests
+import datetime
 
 customtkinter.set_appearance_mode("light") #"system", "dark" y "light"
 customtkinter.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
@@ -63,13 +64,20 @@ def cargar_todo():
     filtered_forms = [formulario for formulario in json_ticket_forms if formulario['form_title'].startswith(
         'SCH')]  # Aqui, lo que està pasando es que como se define luego en el boton los valores que puede tomar, solo se mostraran los de la SCH, pero si se deja sin comentario la de arriba, se estarian desplegando todos los formularios
     # filtered_forms = [formulario for formulario in json_ticket_forms if formulario['form_title']]
+    def checkmark():
+        # Show some positive message with the checkmark icon
+        CTkMessagebox(title="Felicitaciones",
+                      message=f"Se realizó la descarga y actualización de los archivos.",
+                      icon="check", option_1="Muy bien")
+
+    checkmark()
     print("Carga Completa")
 
 
 # pyinstaller --noconfirm --onefile --console --name "AppZendesk" -F main.py --collect-all customtkinter -w
 # pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/agentes_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/usuarios_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
 # pyinstaller --noconfirm --onefile --windowed --name "AppZendeskV5" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
-# pyinstaller --noconfirm --onefile --console --name "AppZendesk (CC)" --add-data "CTkMessagebox;CTkMessagebox/" --add-data "CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter  main.py
+#
 
 
 class App(customtkinter.CTk):
@@ -102,188 +110,237 @@ class App(customtkinter.CTk):
         # ········································· BOTONES ACTUALIZACION ·················································
         def usuarios():
             self.progressbar.set(0)
-            zenpy_client = Zenpy(domain='zendesk.com', subdomain='conicytoirs', email="pfcha_staff@anid.cl", token='aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR')
-            # Obtener la lista de usuarios
-            users = zenpy_client.users()
-            data = []
-            # Recorrer todos los usuarios con barra de progreso
-            for index, user in enumerate(tqdm(users, desc="Procesando usuarios", unit='user'), start=1):
-                data.append(user.to_dict())  # Convertir el usuario a un diccionario y agregarlo a la lista
-                if index == len(users):
-                    # Guardar la lista de usuarios en el archivo JSON
-                    with open("json_usuarios.json", "w") as file:
-                        json.dump(data, file, indent=2)
-                    # Leer el archivo JSON como un DataFrame
-                    df_users = pd.read_json("json_usuarios.json")
+            msg = CTkMessagebox(title="Confirmar descarga/actualización de usuarios",
+                                message="Se iniciará la descarga de usuarios desde Zendesk API. Este proceso tomará unos minutos (7 a 10) para crear/actualizar dos archivos en la carpeta fuente: (i) 'usuarios_zendesk.json' y (ii) 'Usuarios.xlsx'.",
+                                icon="question", option_1="Aceptar", option_2="Cancelar")
+            response = msg.get()
+            if response == "Aceptar":
+                zenpy_client = Zenpy(domain='zendesk.com', subdomain='conicytoirs', email="pfcha_staff@anid.cl", token='aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR')
+                # Obtener la lista de usuarios
+                users = zenpy_client.users()
+                data = []
+                # Recorrer todos los usuarios con barra de progreso
+                for index, user in enumerate(tqdm(users, desc="Procesando usuarios", unit='user'), start=1):
+                    data.append(user.to_dict())  # Convertir el usuario a un diccionario y agregarlo a la lista
+                    if index == len(users):
+                        # Guardar la lista de usuarios en el archivo JSON
+                        with open("json_usuarios.json", "w") as file:
+                            json.dump(data, file, indent=2)
+                        # Leer el archivo JSON como un DataFrame
+                        df_users = pd.read_json("json_usuarios.json")
 
-                    # Convertir datetimes a timezone-unaware
-                    df_users["created_at"] = df_users["created_at"].dt.tz_convert(None)
-                    df_users["last_login_at"] = df_users["last_login_at"].dt.tz_convert(None)
-                    df_users["updated_at"] = df_users["updated_at"].dt.tz_convert(None)
+                        # Convertir datetimes a timezone-unaware
+                        df_users["created_at"] = df_users["created_at"].dt.tz_convert(None)
+                        df_users["last_login_at"] = df_users["last_login_at"].dt.tz_convert(None)
+                        df_users["updated_at"] = df_users["updated_at"].dt.tz_convert(None)
 
-                    # Expandir el diccionario 'user_fields' en columnas individuales
-                    df_users = pd.concat(
-                        [df_users.drop(['user_fields'], axis=1), df_users['user_fields'].apply(pd.Series)],
-                        axis=1)
-                    # Obtener la cantidad de registros en el DataFrame
-                    total_rows = len(df_users)
+                        # Expandir el diccionario 'user_fields' en columnas individuales
+                        df_users = pd.concat(
+                            [df_users.drop(['user_fields'], axis=1), df_users['user_fields'].apply(pd.Series)],
+                            axis=1)
 
-                    # Guardar el DataFrame resultante en un archivo de Excel y Json
-                    df_users.to_excel("Usuarios.xlsx", index=False)
-                    df_users[["id", "name", "email"]].to_json("usuarios_zendesk.json")
+                        # Obtener la fecha y hora actual
+                        fecha_actual = datetime.datetime.now().strftime("%d-%m-%Y")
+                        hora_actual = datetime.datetime.now().strftime("%H.%M")
+                        # Obtener la cantidad de registros en el DataFrame
+                        total_rows = len(df_users)
+                        # Generar el nombre del archivo de Excel
+                        nombre_archivo = f"Usuarios [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{total_rows} registros].xlsx"
 
-                # Actualizar la barra de progreso
-                self.progressbar.set(index / len(users))
-                self.update()  # Actualizar la interfaz gráfica
+                        # Guardar el DataFrame resultante en un archivo de Excel y Json
+                        df_users.to_excel(nombre_archivo, index=False)
+                        df_users[["id", "name", "email"]].to_json("usuarios_zendesk.json")
 
-            print("Descarga Exitosa")
-            cargar_todo()
+                    # Actualizar la barra de progreso
+                    self.progressbar.set(index / len(users))
+                    self.update()  # Actualizar la interfaz gráfica
+
+                print("Descarga Exitosa")
+                cargar_todo()
+            else:
+                print("Cancelado")
+                return
 
         def agentes():
             self.progressbar.set(0)
-            zenpy_client = Zenpy(domain='zendesk.com', subdomain='conicytoirs', email="pfcha_staff@anid.cl",
-                                 token='aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR')
+            msg = CTkMessagebox(title="Confirmar descarga/actualización de agentes",
+                                message="Se iniciará la descarga de agentes desde Zendesk API. Este proceso tomará unos minutos para crear/actualizar dos archivos en la carpeta fuente: (i) 'agentes_zendesk.json' y (ii) 'Agentes.xlsx'.",
+                                icon="question", option_1="Aceptar", option_2="Cancelar")
+            response = msg.get()
+            if response == "Aceptar":
+                zenpy_client = Zenpy(domain='zendesk.com', subdomain='conicytoirs', email="pfcha_staff@anid.cl",
+                                     token='aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR')
 
-            agents = zenpy_client.search("role:admin role:agent", type='user', sort_by='name', sort_order='desc')
-            data = []
-            for index, agent in enumerate(tqdm(agents, desc="Procesando agentes", unit='agent'), start=1):
-                data.append(agent.to_dict())
+                #agents = zenpy_client.search("role:admin role:agent", type='user', sort_by='name', sort_order='desc')
+                agents = zenpy_client.search("role:admin role:agent", type='user')
+                data = []
+                for index, agent in enumerate(tqdm(agents, desc="Procesando agentes", unit='agent'), start=1):
+                    data.append(agent.to_dict())
 
-                if index == len(agents):
-                    # Guardar la lista de usuarios en el archivo JSON
-                    with open("agentes_zendesk.json", "w") as file:
-                        json.dump(data, file, indent=2)
-                    # Leer el archivo JSON como un DataFrame
-                    df_agents = pd.read_json("agentes_zendesk.json")
+                    if index == len(agents):
+                        # Guardar la lista de usuarios en el archivo JSON
+                        with open("agentes_zendesk.json", "w") as file:
+                            json.dump(data, file, indent=2)
+                        # Leer el archivo JSON como un DataFrame
+                        df_agents = pd.read_json("agentes_zendesk.json")
 
-                    # Convertir datetimes a timezone-unaware
-                    df_agents["created_at"] = df_agents["created_at"].dt.tz_convert(None)
-                    df_agents["last_login_at"] = df_agents["last_login_at"].dt.tz_convert(None)
-                    df_agents["updated_at"] = df_agents["updated_at"].dt.tz_convert(None)
+                        # Convertir datetimes a timezone-unaware
+                        df_agents["created_at"] = df_agents["created_at"].dt.tz_convert(None)
+                        df_agents["last_login_at"] = df_agents["last_login_at"].dt.tz_convert(None)
+                        df_agents["updated_at"] = df_agents["updated_at"].dt.tz_convert(None)
 
-                    # Guardar el DataFrame resultante en un archivo de Excel y Json
-                    df_agents.to_excel("Agentes.xlsx", index=False)
-                    df_agents[df_agents['role'] != 'end-user'][["id", "name", "email"]].to_json("agentes_zendesk.json", orient='records')
+                        # Obtener la fecha y hora actual
+                        fecha_actual = datetime.datetime.now().strftime("%d-%m-%Y")
+                        hora_actual = datetime.datetime.now().strftime("%H.%M")
+                        # Obtener la cantidad de registros en el DataFrame
+                        total_rows = len(df_agents)
+                        # Generar el nombre del archivo de Excel
+                        nombre_archivo = f"Agentes [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{total_rows} registros].xlsx"
 
-                # Actualizar la barra de progreso
-                self.progressbar.set(index / len(agents))
-                self.update()  # Actualizar la interfaz gráfica
-            print("Descarga Exitosa")
-            cargar_todo()
+                        # Guardar el DataFrame resultante en un archivo de Excel y Json
+                        df_agents.to_excel(nombre_archivo, index=False)
+                        df_agents[df_agents['role'] != 'end-user'][["id", "name", "email"]].to_json(
+                            "agentes_zendesk.json", orient='records')
+
+                    # Actualizar la barra de progreso
+                    self.progressbar.set(index / len(agents))
+                    self.update()  # Actualizar la interfaz gráfica
+                print("Descarga Exitosa")
+                cargar_todo()
+            else:
+                print("Cancelado")
+                return
+
 
         def formularios():
             time.sleep(1)
             self.progressbar.set(0)
             time.sleep(2)
+            self.progressbar.set(0)
+            msg = CTkMessagebox(title="Confirmar descarga/actualización de formularios",
+                                message="Se iniciará la descarga de formularios desde Zendesk API. Este proceso tomará unos minutos para crear/actualizar dos archivos en la carpeta fuente: (i) 'formularios_zendesk.json' y (ii) 'Formularios.xlsx'.",
+                                icon="question", option_1="Aceptar", option_2="Cancelar")
+            response = msg.get()
+            if response == "Aceptar":
+                # Configurar las credenciales de la API de Zendesk
+                user = "pfcha_staff@anid.cl"
+                token = "aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR"
+                url_forms = "https://conicytoirs.zendesk.com/api/v2/ticket_forms.json"
 
-            # Configurar las credenciales de la API de Zendesk
-            user = "pfcha_staff@anid.cl"
-            token = "aiUPPMqY5pFcSSNt5UpUx2vIFlaAuI6GgOdoHKCR"
-            url_forms = "https://conicytoirs.zendesk.com/api/v2/ticket_forms.json"
+                data = {"ticket_forms": []}
+                max_retries1 = 3
+                retries1 = 0
 
-            data = {"ticket_forms": []}
-            max_retries1 = 3
-            retries1 = 0
+                while retries1 < max_retries1:
+                    try:
+                        response = requests.get(url_forms, auth=(user + "/token", token))
+                        if response.status_code == 200:
+                            ticket_forms = response.json()["ticket_forms"]
+                            for index, form in enumerate(tqdm(ticket_forms, desc="Procesando formularios", unit='form'),
+                                                         start=1):
+                                form_data = {
+                                    "form_id": form["id"],
+                                    "form_title": form["name"],
+                                    "form_fields": []
+                                }
+                                for field_id in form['ticket_field_ids']:
+                                    url = 'https://conicytoirs.zendesk.com/api/v2/ticket_fields/{}.json'
+                                    max_retries2 = 3
+                                    retries2 = 0
 
-            while retries1 < max_retries1:
-                try:
-                    response = requests.get(url_forms, auth=(user + "/token", token))
-                    if response.status_code == 200:
-                        ticket_forms = response.json()["ticket_forms"]
-                        for index, form in enumerate(tqdm(ticket_forms, desc="Procesando formularios", unit='form'),
-                                                     start=1):
-                            form_data = {
-                                "form_id": form["id"],
-                                "form_title": form["name"],
-                                "form_fields": []
-                            }
-                            for field_id in form['ticket_field_ids']:
-                                url = 'https://conicytoirs.zendesk.com/api/v2/ticket_fields/{}.json'
-                                max_retries2 = 3
-                                retries2 = 0
+                                    while retries2 < max_retries2:
+                                        try:
+                                            response_field = requests.get(url.format(field_id),
+                                                                          auth=(user + "/token", token))
+                                            response_field.raise_for_status()
 
-                                while retries2 < max_retries2:
-                                    try:
-                                        response_field = requests.get(url.format(field_id),
-                                                                      auth=(user + "/token", token))
-                                        response_field.raise_for_status()
-
-                                        if response_field.status_code == 200:
-                                            field_data = response_field.json()['ticket_field']
-                                            field_name = field_data['title']
-                                            form_data["form_fields"].append({
-                                                "field_id": field_id,
-                                                "field_title": field_name
-                                            })
-                                            break  # Salir del bucle while si la solicitud fue exitosa
-
-                                        elif response_field.status_code == 429:
-                                            seconds_to_wait = int(response.headers["Retry-After"])
-                                            print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait,
-                                                  "segundos.")
-                                            time.sleep(seconds_to_wait)
-                                            retries1 += 1
-                                            if retries2 == max_retries2:
+                                            if response_field.status_code == 200:
                                                 field_data = response_field.json()['ticket_field']
-                                                field_name = "field_data['title']"
+                                                field_name = field_data['title']
                                                 form_data["form_fields"].append({
-                                                    "field_id": "field_id",
-                                                    "field_title": "field_name"})
-                                        else:
-                                            print('Error al obtener el campo con ID {}: {}'.format(field_id,
-                                                                                                   response_field.status_code))
-                                            time.sleep(3)
+                                                    "field_id": field_id,
+                                                    "field_title": field_name
+                                                })
+                                                break  # Salir del bucle while si la solicitud fue exitosa
+
+                                            elif response_field.status_code == 429:
+                                                seconds_to_wait = int(response.headers["Retry-After"])
+                                                print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait,
+                                                      "segundos.")
+                                                time.sleep(seconds_to_wait)
+                                                retries1 += 1
+                                                if retries2 == max_retries2:
+                                                    field_data = response_field.json()['ticket_field']
+                                                    field_name = "field_data['title']"
+                                                    form_data["form_fields"].append({
+                                                        "field_id": "field_id",
+                                                        "field_title": "field_name"})
+                                            else:
+                                                print('Error al obtener el campo con ID {}: {}'.format(field_id,
+                                                                                                       response_field.status_code))
+                                                time.sleep(3)
+                                                retries2 += 1
+                                                if retries2 == max_retries2:
+                                                    field_data = response_field.json()['ticket_field']
+                                                    field_name = "field_data['title']"
+                                                    form_data["form_fields"].append({
+                                                        "field_id": "field_id",
+                                                        "field_title": "field_name"})
+
+                                        except requests.exceptions.SSLError:
+                                            print('Error SSL. Reintentando la solicitud...')
                                             retries2 += 1
-                                            if retries2 == max_retries2:
-                                                field_data = response_field.json()['ticket_field']
-                                                field_name = "field_data['title']"
-                                                form_data["form_fields"].append({
-                                                    "field_id": "field_id",
-                                                    "field_title": "field_name"})
+                                            time.sleep(3)  # Esperar 3 segundos antes de reintentar
 
-                                    except requests.exceptions.SSLError:
-                                        print('Error SSL. Reintentando la solicitud...')
-                                        retries2 += 1
-                                        time.sleep(3)  # Esperar 3 segundos antes de reintentar
+                                data["ticket_forms"].append(form_data)
+                                self.progressbar.set(index / len(ticket_forms))
+                                self.update()
 
-                            data["ticket_forms"].append(form_data)
-                            self.progressbar.set(index / len(ticket_forms))
-                            self.update()
+                            break  # Salir del bucle while si la solicitud fue exitosa
 
-                        break  # Salir del bucle while si la solicitud fue exitosa
+                        elif response.status_code == 429:
+                            seconds_to_wait = int(response.headers["Retry-After"])
+                            print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait, "segundos.")
+                            time.sleep(seconds_to_wait)
+                            retries1 += 1
 
-                    elif response.status_code == 429:
-                        seconds_to_wait = int(response.headers["Retry-After"])
-                        print("Api transfer rate sobrepasada. Esperar:", seconds_to_wait, "segundos.")
-                        time.sleep(seconds_to_wait)
+                        else:
+                            print("Error al obtener los formularios. Código de estado:", response.status_code)
+                            time.sleep(3)
+                            retries1 += 1
+
+                    except requests.exceptions.SSLError:
+                        print('Error SSL. Reintentando la solicitud...')
                         retries1 += 1
+                        time.sleep(3)  # Esperar 3 segundos antes de reintentar
 
-                    else:
-                        print("Error al obtener los formularios. Código de estado:", response.status_code)
-                        time.sleep(3)
-                        retries1 += 1
+                # Guardar los datos en un archivo JSON
+                with open("formularios_zendesk.json", "w") as file:
+                    json.dump(data, file)
 
-                except requests.exceptions.SSLError:
-                    print('Error SSL. Reintentando la solicitud...')
-                    retries1 += 1
-                    time.sleep(3)  # Esperar 3 segundos antes de reintentar
+                # Leer el archivo JSON
+                with open('formularios_zendesk.json', 'r') as file:
+                    data = json.load(file)
 
-            # Guardar los datos en un archivo JSON
-            with open("formularios_zendesk.json", "w") as file:
-                json.dump(data, file)
+                # Aplanar los diccionarios en columnas del DataFrame
+                df = pd.json_normalize(data, 'ticket_forms', errors='ignore')
+                df = df.explode('form_fields')
+                df = pd.concat([df.drop(['form_fields'], axis=1), df['form_fields'].apply(pd.Series)], axis=1)
 
-            # Leer el archivo JSON
-            with open('formularios_zendesk.json', 'r') as file:
-                data = json.load(file)
+                # Obtener la fecha y hora actual
+                fecha_actual = datetime.datetime.now().strftime("%d-%m-%Y")
+                hora_actual = datetime.datetime.now().strftime("%H.%M")
+                # Obtener la cantidad de registros en el DataFrame
+                total_rows = len(df)
+                # Generar el nombre del archivo de Excel
+                nombre_archivo = f"Formularios [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{total_rows} registros].xlsx"
 
-            # Aplanar los diccionarios en columnas del DataFrame
-            df = pd.json_normalize(data, 'ticket_forms', errors='ignore')
-            df = df.explode('form_fields')
-            df = pd.concat([df.drop(['form_fields'], axis=1), df['form_fields'].apply(pd.Series)], axis=1)
-
-            df.to_excel("Formularios.xlsx", index=False)
-            print("Descarga Exitosa")
-            cargar_todo()
+                df.to_excel(nombre_archivo, index=False)
+                print("Descarga Exitosa")
+                cargar_todo()
+            else:
+                print("Cancelado")
+                return
 
 
         update_frame = customtkinter.CTkFrame(self)
@@ -369,7 +426,7 @@ class App(customtkinter.CTk):
 
                 def show_checkmark():
                     # Show some positive message with the checkmark icon
-                    CTkMessagebox(title="Felicitaciones",message=f"Se ha incorporado a la lista  de notificación masiva un total de {index} usuarios",
+                    CTkMessagebox(title="Felicitaciones",message=f"Se ha incorporado a la lista de notificación masiva un total de {index} usuarios",
                                   icon="check", option_1="Muy bien")
                 show_checkmark()
 
@@ -825,9 +882,19 @@ class App(customtkinter.CTk):
                     with open("responses.json", "w") as file:
                         json.dump(json_response, file)
 
+                    # Obtener la fecha y hora actual
+                    fecha_actual = datetime.datetime.now().strftime("%d-%m-%Y")
+                    hora_actual = datetime.datetime.now().strftime("%H.%M")
+                    # Obtener el número diferenciador basado en len(tickets)
+                    numero_diferenciador = len(tickets)
+                    # Generar el nombre del archivo de Excel
+                    nombre_archivo = f"Seguimiento tickets [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{numero_diferenciador} tickets].xlsx"
+
                     # Convertir el JSON en un DataFrame
                     df = pd.json_normalize(json_response)
-                    df.to_excel("Seguimiento_tickets.xlsx", index=False)
+                    # Guardar el DataFrame en el archivo de Excel
+                    df.to_excel(nombre_archivo, index=False)
+
                     ######################################END COLAB##############################################
                     def show_finish():
                         # Show some error message

@@ -213,9 +213,6 @@ class App(customtkinter.CTk):
 
 
         def formularios():
-            time.sleep(1)
-            self.progressbar.set(0)
-            time.sleep(2)
             self.progressbar.set(0)
             msg = CTkMessagebox(title="Confirmar descarga/actualización de formularios",
                                 message="Se iniciará la descarga de formularios desde Zendesk API. Este proceso tomará unos minutos para crear/actualizar dos archivos en la carpeta fuente: (i) 'formularios_zendesk.json' y (ii) 'Formularios.xlsx'.",
@@ -401,6 +398,16 @@ class App(customtkinter.CTk):
                         show_error_1()
                         return
 
+            if ids_lista == []:
+                def show_error_id_vacio():
+                    # Show some error message
+                    CTkMessagebox(title="Error",
+                                  message="No ha ingresado la lista de ID's",
+                                  icon="cancel")
+
+                show_error_id_vacio()
+                return
+
             print(ids_lista)
 
             def buscar_por_id(usuarios, ids):
@@ -503,18 +510,15 @@ class App(customtkinter.CTk):
         # Obtener solo los nombres de los formularios filtrados
         ticket_form_names = [formulario['form_title'] for formulario in filtered_forms]
 
-        def combobox_callback(choice):
-            print("combobox dropdown clicked:", choice)
-
         default_1 = customtkinter.StringVar(value="Seleccionar tipo de producto")
+        def combobox_callback(choice):
+            print("combobox dropdown clicked:", str(self.optionmenu_1.get()))
+
         self.optionmenu_1 = customtkinter.CTkComboBox(self, width=640, command=combobox_callback, variable=default_1)
         self.optionmenu_1.grid(row=1, column=2, columnspan=2, padx=10, pady=10, sticky="ew")
         CTkScrollableDropdown(self.optionmenu_1, values=ticket_form_names, justify="left", height=700)
 
         #······································ ESTADO DEL TICKET ·················································
-
-        def radiobutton_event():
-            print("radiobutton toggled, current value:", radio_var.get())
 
         estado_frame = customtkinter.CTkFrame(self)
         estado_frame.grid(row=2, column=2, padx=10, pady=5, sticky="nsew")
@@ -522,12 +526,15 @@ class App(customtkinter.CTk):
         estado_label = customtkinter.CTkLabel(estado_frame, text="Estado del ticket")
         estado_label.pack(side="top", expand=True, fill="both")
 
-        radio_var = tkinter.IntVar(value=0)
+        def obtener_valor_estado(valor):
+            valor_seleccionado = self.segemented_button_var.get()
+            print(str(valor_seleccionado))
 
         self.segemented_button_var = customtkinter.StringVar(value="Cerrado")
         self.segemented_button = customtkinter.CTkSegmentedButton(estado_frame,
                                                                   values=["Cerrado", "Abierto", "Pendiente", "En espera"],
-                                                                  variable=self.segemented_button_var)
+                                                                  variable=self.segemented_button_var,
+                                                                  command=obtener_valor_estado)
         self.segemented_button.pack(side="left", padx=10, pady=10, expand=True, fill="both")
 
         # ································ PRIORIDAD DEL TICKET ·················································
@@ -536,11 +543,15 @@ class App(customtkinter.CTk):
         prioridad_frame.grid(row=2, column=3, padx=10, pady=5, sticky="nsew")
         prioridad_label = customtkinter.CTkLabel(prioridad_frame, text="Tipo de prioridad")
         prioridad_label.pack(side="top", expand=True, fill="both")
+        def obtener_valor_prioridad(valor):
+            valor_seleccionado = self.segemented_button_var_1.get()
+            print(str(valor_seleccionado))
 
         self.segemented_button_var_1 = customtkinter.StringVar(value="Normal")
         self.segemented_button_var_1 = customtkinter.CTkSegmentedButton(prioridad_frame,
                                                                         values=["Normal", "Alta", "Urgente", "Baja"],
-                                                                        variable=self.segemented_button_var_1)
+                                                                        variable=self.segemented_button_var_1,
+                                                                        command=obtener_valor_prioridad)
         self.segemented_button_var_1.pack(side="right", padx=10, pady=10, expand=True, fill="both")
 
         #····································· ASUNTO DEL MENSAJE ··········································
@@ -555,7 +566,7 @@ class App(customtkinter.CTk):
 
         self.textbox.grid(row=4, column=2, columnspan=2, padx=10, pady=10, sticky="nsew")
 
-        self.textbox.insert("0.0","Insertar mensaje")
+        self.textbox.insert("0.0","{}, {}:\n\nEscribir/copiar aquí el resto del mensaje. La primera línea es un encabezado que automaticamente asignara el siguiente string: Buenos días/tardes/noches (automático dependiendo de la hora a la que se cree el ticket) y el nombre del usuario:.\n\nDe todas formas, es posible borrarlo y escribir cualquier mensaje, solo debes considerar que si se mantienen los dos corchetes en la pimera línea, la apertura del mensaje será automática. Otro punto importante es que si se deja la pimera línea, no deben existir otros corchetes iguales dentro del mensaje que sigue en el resto de las líneas.")
         self.textbox_carga.insert("0.0", "")
 
         def envio():
@@ -743,8 +754,8 @@ class App(customtkinter.CTk):
                             else:
                                 return
                         show_warning_api()
-                    ##########################################################################################
 
+                    ############################## Lectura usuarios y mensaje ################################
                     usuarios = resultados
 
                     # Definir los datos del agente
@@ -756,6 +767,15 @@ class App(customtkinter.CTk):
                     # Crear la lista de datos de los tickets
                     tickets = []
                     for usuario in usuarios:
+                        # Obtener la hora actual
+                        hora_actual = datetime.datetime.now().time()
+                        # Determinar si es mañana, tarde o noche
+                        if hora_actual < datetime.time(12):
+                            saludo = "Buenos días"
+                        elif hora_actual < datetime.time(18):
+                            saludo = "Buenas tardes"
+                        else:
+                            saludo = "Buenas noches"
                         ticket_data = {
                             "ticket": {
                                 'tags': 'notificacion_masiva_sch',  # a crear por el tito
@@ -764,7 +784,7 @@ class App(customtkinter.CTk):
                                 "assignee_id": agente["id"],
                                 "subject": asunto,
                                 "raw_subject": asunto,
-                                "comment": {"body": cuerpo},
+                                "comment": {"body": cuerpo.format(saludo, usuario["name"])},
                                 # "comment": {"body": cuerpo, "public": False},
                                 # "actions": [{'field': 'notification_user',
                                 #             'value': [
@@ -835,14 +855,16 @@ class App(customtkinter.CTk):
                         }
                         tickets.append(ticket_data)
                     print("Tickets:", tickets)
-                    json_response = []
                     ##########################################################################################
                     # Enviar una solicitud para crear cada ticket
+                    json_response = []
+
                     ticket_url = "https://conicytoirs.zendesk.com/api/v2/tickets.json"
 
                     max_attempts = 3  # Número máximo de intentos permitidos por ticket
 
                     for i, ticket_data in enumerate(tickets, start=1):
+                        print(ticket_data)
                         attempts = 0
                         while attempts < max_attempts:
                             try:
@@ -867,7 +889,7 @@ class App(customtkinter.CTk):
                             except requests.exceptions.SSLError:
                                 print('Error SSL. Reintentando la solicitud...')
                                 attempts += 1
-                                time.sleep(3)  # Esperar 3 segundos antes de reintentar
+                                time.sleep(3)  # Esperar 3 segundos antes de reintentar"""
 
                         self.progressbar.set(i / len(tickets))
                         self.progressbar.get()

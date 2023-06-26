@@ -928,7 +928,6 @@ class App(customtkinter.CTk):
                     print("Cancelado")
                     return
 
-
             else:
                 def show_error_2():
                     # Show some error message

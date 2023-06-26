@@ -784,7 +784,7 @@ class App(customtkinter.CTk):
                                 "assignee_id": agente["id"],
                                 "subject": asunto,
                                 "raw_subject": asunto,
-                                "comment": {"body": cuerpo.format(saludo, usuario["name"])},
+                                "comment": {"body": cuerpo.format(saludo, usuario["name"].title())},
                                 # "comment": {"body": cuerpo, "public": False},
                                 # "actions": [{'field': 'notification_user',
                                 #             'value': [

@@ -12,24 +12,43 @@ from zenpy import Zenpy
 import json
 import requests
 import datetime
+import os
 
 customtkinter.set_appearance_mode("light") #"system", "dark" y "light"
 customtkinter.set_default_color_theme("dark-blue") # Themes: "blue" (standard), "green", "dark-blue"
 
+# Verificar la existencia de la carpeta "Fuente"
+carpeta_fuente = "Fuente"
+if not os.path.exists(carpeta_fuente):
+    os.makedirs(carpeta_fuente)
+    print(f"Carpeta '{carpeta_fuente}' creada correctamente.")
+
+# Verificar la existencia de la carpeta "Excel"
+carpeta_excel = "Excel"
+if not os.path.exists(carpeta_excel):
+    os.makedirs(carpeta_excel)
+    print(f"Carpeta '{carpeta_excel}' creada correctamente.")
+
+# Verificar la existencia de la carpeta "Seguimiento"
+carpeta_seguimiento = "Seguimiento"
+if not os.path.exists(carpeta_seguimiento):
+    os.makedirs(carpeta_seguimiento)
+    print(f"Carpeta '{carpeta_seguimiento}' creada correctamente.")
+
 # Abrir el archivo JSON
-with open('agentes_zendesk.json', 'r') as json_file:
+with open('Fuente/agentes_zendesk.json', 'r') as json_file:
     agentes = json.load(json_file)
 
 values = [item['name'] for item in agentes]
 
 # Convertir el JSON a DataFrame
-df_agentes = pd.read_json('agentes_zendesk.json')
+df_agentes = pd.read_json('Fuente/agentes_zendesk.json')
 dic_agentes = df_agentes.to_dict(orient='records')
-df_usuarios = pd.read_json('usuarios_zendesk.json')
+df_usuarios = pd.read_json('Fuente/usuarios_zendesk.json')
 dic_usuarios = df_usuarios.to_dict(orient='records')
 
 # Leer el archivo JSON
-with open('formularios_zendesk.json', 'r') as file:
+with open('Fuente/formularios_zendesk.json', 'r') as file:
     data = json.load(file)
 
 # Acceder a la lista de formularios
@@ -42,19 +61,19 @@ filtered_forms = [formulario for formulario in json_ticket_forms if formulario['
 
 def cargar_todo():
     # Abrir el archivo JSON
-    with open('agentes_zendesk.json', 'r') as json_file:
+    with open('Fuente/agentes_zendesk.json', 'r') as json_file:
         agentes = json.load(json_file)
 
     values = [item['name'] for item in agentes]
 
     # Convertir el JSON a DataFrame
-    df_agentes = pd.read_json('agentes_zendesk.json')
+    df_agentes = pd.read_json('Fuente/agentes_zendesk.json')
     dic_agentes = df_agentes.to_dict(orient='records')
-    df_usuarios = pd.read_json('usuarios_zendesk.json')
+    df_usuarios = pd.read_json('Fuente/usuarios_zendesk.json')
     dic_usuarios = df_usuarios.to_dict(orient='records')
 
     # Leer el archivo JSON
-    with open('formularios_zendesk.json', 'r') as file:
+    with open('Fuente/formularios_zendesk.json', 'r') as file:
         data = json.load(file)
 
     # Acceder a la lista de formularios
@@ -72,7 +91,6 @@ def cargar_todo():
 
     checkmark()
     print("Carga Completa")
-
 
 # pyinstaller --noconfirm --onefile --console --name "AppZendesk" -F main.py --collect-all customtkinter -w
 # pyinstaller --noconfirm --onefile --windowed --name "AppZendesk" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/agentes_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/usuarios_zendesk.json;." --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkMessagebox;CTkMessagebox/" --add-data "C:/Users/aparedes/PycharmProjects/AppZendesk/CTkScrollableDropdown;CTkScrollableDropdown/" --collect-all customtkinter -w "C:/Users/aparedes/PycharmProjects/AppZendesk/main.py"
@@ -100,7 +118,6 @@ class App(customtkinter.CTk):
         self.scaling_optionemenu.grid(row=5, column=0, columnspan=2, padx=60, pady=(20, 20), sticky="w")
         self.scaling_optionemenu.set("100%")
 
-
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self,
                                                                        values=["Light", "Dark", "System"],
                                                                        command=self.change_appearance_mode_event)
@@ -111,7 +128,7 @@ class App(customtkinter.CTk):
         def usuarios():
             self.progressbar.set(0)
             msg = CTkMessagebox(title="Confirmar descarga/actualización de usuarios",
-                                message="Se iniciará la descarga de usuarios desde Zendesk API. Este proceso tomará unos minutos (7 a 10) para crear/actualizar dos archivos en la carpeta fuente: (i) 'usuarios_zendesk.json' y (ii) 'Usuarios.xlsx'.",
+                                message="Se iniciará la descarga de usuarios desde Zendesk API. Este proceso tomará unos minutos (7 a 10) para crear/actualizar dos archivos en la carpeta fuente: (i) 'Fuente/usuarios_zendesk.json' y (ii) 'Excel/Usuarios [dia-mes-año] [hora.minuto].xlsx'.",
                                 icon="question", option_1="Aceptar", option_2="Cancelar")
             response = msg.get()
             if response == "Aceptar":
@@ -124,10 +141,10 @@ class App(customtkinter.CTk):
                     data.append(user.to_dict())  # Convertir el usuario a un diccionario y agregarlo a la lista
                     if index == len(users):
                         # Guardar la lista de usuarios en el archivo JSON
-                        with open("json_usuarios.json", "w") as file:
+                        with open("Fuente/json_usuarios.json", "w") as file:
                             json.dump(data, file, indent=2)
                         # Leer el archivo JSON como un DataFrame
-                        df_users = pd.read_json("json_usuarios.json")
+                        df_users = pd.read_json("Fuente/json_usuarios.json")
 
                         # Convertir datetimes a timezone-unaware
                         df_users["created_at"] = df_users["created_at"].dt.tz_convert(None)
@@ -145,11 +162,11 @@ class App(customtkinter.CTk):
                         # Obtener la cantidad de registros en el DataFrame
                         total_rows = len(df_users)
                         # Generar el nombre del archivo de Excel
-                        nombre_archivo = f"Usuarios [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{total_rows} registros].xlsx"
+                        nombre_archivo = f"Excel/Usuarios [{fecha_actual}] [{hora_actual}] [{total_rows} registros].xlsx"
 
                         # Guardar el DataFrame resultante en un archivo de Excel y Json
                         df_users.to_excel(nombre_archivo, index=False)
-                        df_users[["id", "name", "email"]].to_json("usuarios_zendesk.json")
+                        df_users[["id", "name", "email"]].to_json("Fuente/usuarios_zendesk.json")
 
                     # Actualizar la barra de progreso
                     self.progressbar.set(index / len(users))
@@ -164,7 +181,7 @@ class App(customtkinter.CTk):
         def agentes():
             self.progressbar.set(0)
             msg = CTkMessagebox(title="Confirmar descarga/actualización de agentes",
-                                message="Se iniciará la descarga de agentes desde Zendesk API. Este proceso tomará unos minutos para crear/actualizar dos archivos en la carpeta fuente: (i) 'agentes_zendesk.json' y (ii) 'Agentes.xlsx'.",
+                                message="Se iniciará la descarga de agentes desde Zendesk API. Este proceso tomará unos minutos para crear/actualizar dos archivos en la carpeta fuente: (i) 'Fuente/agentes_zendesk.json' y (ii) 'Excel/Agentes [dia-mes-año] [hora.minuto].xlsx'.",
                                 icon="question", option_1="Aceptar", option_2="Cancelar")
             response = msg.get()
             if response == "Aceptar":
@@ -179,10 +196,10 @@ class App(customtkinter.CTk):
 
                     if index == len(agents):
                         # Guardar la lista de usuarios en el archivo JSON
-                        with open("agentes_zendesk.json", "w") as file:
+                        with open("Fuente/agentes_zendesk.json", "w") as file:
                             json.dump(data, file, indent=2)
                         # Leer el archivo JSON como un DataFrame
-                        df_agents = pd.read_json("agentes_zendesk.json")
+                        df_agents = pd.read_json("Fuente/agentes_zendesk.json")
 
                         # Convertir datetimes a timezone-unaware
                         df_agents["created_at"] = df_agents["created_at"].dt.tz_convert(None)
@@ -195,12 +212,12 @@ class App(customtkinter.CTk):
                         # Obtener la cantidad de registros en el DataFrame
                         total_rows = len(df_agents)
                         # Generar el nombre del archivo de Excel
-                        nombre_archivo = f"Agentes [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{total_rows} registros].xlsx"
+                        nombre_archivo = f"Excel/Agentes [{fecha_actual}] [{hora_actual}] [{total_rows} registros].xlsx"
 
                         # Guardar el DataFrame resultante en un archivo de Excel y Json
                         df_agents.to_excel(nombre_archivo, index=False)
                         df_agents[df_agents['role'] != 'end-user'][["id", "name", "email"]].to_json(
-                            "agentes_zendesk.json", orient='records')
+                            "Fuente/agentes_zendesk.json", orient='records')
 
                     # Actualizar la barra de progreso
                     self.progressbar.set(index / len(agents))
@@ -215,7 +232,7 @@ class App(customtkinter.CTk):
         def formularios():
             self.progressbar.set(0)
             msg = CTkMessagebox(title="Confirmar descarga/actualización de formularios",
-                                message="Se iniciará la descarga de formularios desde Zendesk API. Este proceso tomará unos minutos para crear/actualizar dos archivos en la carpeta fuente: (i) 'formularios_zendesk.json' y (ii) 'Formularios.xlsx'.",
+                                message="Se iniciará la descarga de formularios desde Zendesk API. Este proceso tomará unos minutos para crear/actualizar dos archivos en la carpeta fuente: (i) 'Fuente/formularios_zendesk.json' y (ii) 'Excel/Formularios [dia-mes-año] [hora.minuto].xlsx'.",
                                 icon="question", option_1="Aceptar", option_2="Cancelar")
             response = msg.get()
             if response == "Aceptar":
@@ -312,11 +329,11 @@ class App(customtkinter.CTk):
                         time.sleep(3)  # Esperar 3 segundos antes de reintentar
 
                 # Guardar los datos en un archivo JSON
-                with open("formularios_zendesk.json", "w") as file:
+                with open('Fuente/formularios_zendesk.json', "w") as file:
                     json.dump(data, file)
 
                 # Leer el archivo JSON
-                with open('formularios_zendesk.json', 'r') as file:
+                with open('Fuente/formularios_zendesk.json', 'r') as file:
                     data = json.load(file)
 
                 # Aplanar los diccionarios en columnas del DataFrame
@@ -330,7 +347,7 @@ class App(customtkinter.CTk):
                 # Obtener la cantidad de registros en el DataFrame
                 total_rows = len(df)
                 # Generar el nombre del archivo de Excel
-                nombre_archivo = f"Formularios [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{total_rows} registros].xlsx"
+                nombre_archivo = f"Excel/Formularios [{fecha_actual}] [{hora_actual}] [{total_rows} registros].xlsx"
 
                 df.to_excel(nombre_archivo, index=False)
                 print("Descarga Exitosa")
@@ -373,6 +390,8 @@ class App(customtkinter.CTk):
             return resultados
 
         def leer_ids():
+            ###################################################
+            self.treeview.delete(*self.treeview.get_children())
             ids_buscados = self.textbox_carga.get("0.0", "end-1c")
             print(ids_buscados)
             try:
@@ -393,7 +412,7 @@ class App(customtkinter.CTk):
                         def show_error_1():
                             # Show some error message
                             CTkMessagebox(title="Error",
-                                          message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma a excepción del ultimo valor y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
+                                          message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma o un espacio y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
                                           icon="cancel")
                         show_error_1()
                         return
@@ -409,6 +428,7 @@ class App(customtkinter.CTk):
                 return
 
             print(ids_lista)
+            print(len(ids_lista))
 
             def buscar_por_id(usuarios, ids):
                 resultados = [usuario for usuario in usuarios if usuario.get('id') in ids]
@@ -420,7 +440,7 @@ class App(customtkinter.CTk):
                 print("len lista resultados:", len(resultados), "| len lista ingresada:", len(ids_lista))
                 def show_error():
                     # Show some error message
-                    CTkMessagebox(title="Error", message="Algunos ID's ingresados no son válidos. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma a excepción del ultimo valor y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.", icon="cancel")
+                    CTkMessagebox(title="Error", message="Algunos ID's ingresados no son válidos. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma o un espacio y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.", icon="cancel")
                 show_error()
             elif (len(resultados) == 0) & (len(ids_lista) == 0):
                 print("len lista resultados:", len(resultados), "| len lista ingresada:", len(ids_lista))
@@ -566,7 +586,7 @@ class App(customtkinter.CTk):
 
         self.textbox.grid(row=4, column=2, columnspan=2, padx=10, pady=10, sticky="nsew")
 
-        self.textbox.insert("0.0","{}, {}:\n\nEscribir/copiar aquí el resto del mensaje. La primera línea es un encabezado que automaticamente asignara el siguiente string: Buenos días/tardes/noches (automático dependiendo de la hora a la que se cree el ticket) y el nombre del usuario:.\n\nDe todas formas, es posible borrarlo y escribir cualquier mensaje, solo debes considerar que si se mantienen los dos corchetes en la pimera línea, la apertura del mensaje será automática. Otro punto importante es que si se deja la pimera línea, no deben existir otros corchetes iguales dentro del mensaje que sigue en el resto de las líneas.")
+        self.textbox.insert("0.0","{}, {}:\n\nEscribir/copiar aquí el resto del mensaje. La primera línea es un encabezado que automaticamente asignara el siguiente string: Buenos días/tardes/noches (automático dependiendo de la hora a la que se genere el ticket) y el nombre del usuario:.\n\nDe todas formas, es posible borrarlo y escribir cualquier mensaje, solo debes considerar que si se mantienen los dos corchetes en la primera línea, la apertura del mensaje será automática. Otro punto importante es que si se deja la primera línea, no deben existir otros corchetes iguales dentro del mensaje.")
         self.textbox_carga.insert("0.0", "")
 
         def envio():
@@ -616,7 +636,7 @@ class App(customtkinter.CTk):
                         def show_error_1():
                             # Show some error message
                             CTkMessagebox(title="Error",
-                                          message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma a excepción del ultimo valor y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
+                                          message="No ha ingresado ID's correctamente o los valores no son de tipo numérico. Revise la lista ingresada, asegurandose de: (i) que los ID's deben ser identificadores válidos para cada usuario en Zendesk, (ii) que todos los ID's estén separados por una coma o un espacio y (iii) que los valores ingresados sean de tipo numérico, dado que la lista no debe contener letras.",
                                           icon="cancel")
                         show_error_1()
                         return
@@ -900,17 +920,19 @@ class App(customtkinter.CTk):
                     print("completado")
                     ############################################################################################
                     import pandas as pd
-                    # Guardar las respuestas en un archivo JSON
-                    with open("responses.json", "w") as file:
-                        json.dump(json_response, file)
 
                     # Obtener la fecha y hora actual
                     fecha_actual = datetime.datetime.now().strftime("%d-%m-%Y")
                     hora_actual = datetime.datetime.now().strftime("%H.%M")
                     # Obtener el número diferenciador basado en len(tickets)
                     numero_diferenciador = len(tickets)
+
+                    # Guardar las respuestas en un archivo JSON
+                    with open(f"Seguimiento/responses [{fecha_actual}] [{hora_actual}].json", "w") as file:
+                        json.dump(json_response, file)
+
                     # Generar el nombre del archivo de Excel
-                    nombre_archivo = f"Seguimiento tickets [{fecha_actual} (d-m-y)] [{hora_actual} (h.m)] [{numero_diferenciador} tickets].xlsx"
+                    nombre_archivo = f"Seguimiento/Seguimiento tickets [{fecha_actual}] [{hora_actual}] [{numero_diferenciador} tickets].xlsx"
 
                     # Convertir el JSON en un DataFrame
                     df = pd.json_normalize(json_response)

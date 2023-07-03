@@ -52,7 +52,7 @@ with open('Fuente/formularios_zendesk.json', 'r') as file:
     data = json.load(file)
 
 # Acceder a la lista de formularios
-json_ticket_forms = data['ticket_forms']  # luego en la variable ticket_forms usa para tener todos los formularios
+json_ticket_forms = data['ticket_forms']  # luego en la variable ticket_forms se usa para tener todos los formularios
 
 # Filtrar los formularios cuyo título comienza con 'SCH'
 filtered_forms = [formulario for formulario in json_ticket_forms if formulario['form_title'].startswith(
